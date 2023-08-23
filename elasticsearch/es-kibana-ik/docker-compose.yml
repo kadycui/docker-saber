@@ -1,0 +1,22 @@
+version: "3"
+services:
+    elasticsearch:
+        build: ./elasticsearch
+        container_name: "elasticsearch"
+        ports:
+            - "9200:9200"
+            - "9300:9300"
+        volumes:
+            - "./elasticsearch/data:/usr/share/elasticsearch/data:rw"
+            - "./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml"
+            - "./elasticsearch/logs:/user/share/elasticsearch/logs:rw"
+            - "./elasticsearch/plugins/ik:/usr/share/elasticsearch/plugins/ik"
+    kibana:
+        build: ./kibana
+        container_name: kibana
+        ports:
+            - "5601:5601"
+        volumes:
+            - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+        depends_on:
+            - "elasticsearch"

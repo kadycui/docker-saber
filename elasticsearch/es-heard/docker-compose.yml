@@ -1,0 +1,134 @@
+ 
+ 
+version: '3'
+services:
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - TZ="Asia/Shanghai"
+      - node.master=true
+      - node.data=true      
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*      
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - elastic
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
+    container_name: es02
+    environment:
+      - node.name=es02
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - TZ="Asia/Shanghai"
+      - node.master=true
+      - node.data=true
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata2:/usr/share/elasticsearch/data
+    ports:
+      - 9201:9200
+      - 9301:9300      
+    networks:
+      - elastic
+
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
+    container_name: es03
+    environment:
+      - node.name=es03
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - TZ="Asia/Shanghai"
+      - node.master=true
+      - node.data=true
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata3:/usr/share/elasticsearch/data
+    ports:
+      - 9202:9200
+      - 9302:9300
+    networks:
+      - elastic
+
+      
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.3
+    container_name: kibana
+    restart: always
+    environment:
+      - ELASTICSEARCH_URL=http://172.20.166.56:9200
+      - ELASTICSEARCH_HOSTS=http://172.20.166.56:9200
+      - CLUSTER_NAME=docker-cluster
+      - I18N_LOCALE=zh-CN
+    ports:
+      - 5601:5601
+
+    networks:
+        - elastic
+ 
+  cerebro:
+      image: lmenezes/cerebro:0.9.2
+      container_name: cerebro
+      ports:
+        - "19000:9000"
+      links:
+        - es01:vm01
+      command:
+        - -Dhosts.0.host=http://vm01:9200
+      networks:
+        - elastic
+
+        
+  elasticsearch-head:
+      image: wallbase/elasticsearch-head:6-alpine
+      container_name: elasticsearch-head
+      environment:
+        TZ: 'Asia/Shanghai'
+      ports:
+        - '9100:9100'
+      networks:
+        - elastic
+
+
+volumes:
+  esdata1:
+  esdata2:
+  esdata3:
+ 
+networks:
+  elastic:
+    driver: bridge
